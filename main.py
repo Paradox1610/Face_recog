@@ -25,6 +25,8 @@ def real_time_recognition():
                 label = 'Vaibhav'
             elif np.argmax(model_out) == 1:
                 label = 'Sruthi'
+            elif np.argmax(model_out) == 2:
+                label = "Intruder"
             
             
             
