@@ -9,7 +9,7 @@ face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fro
 model = tf.keras.models.load_model("face_model.keras")
 
 # Connect to Arduino
-arduino = Serial('/dev/ttyUSB0', baudrate=9600, timeout=2)  # Replace 'COM9' with your Arduino port
+arduino = Serial('COM9', baudrate=9600, timeout=2)  # Replace 'COM9' with your Arduino port
 print("Connected to Arduino on COM9")
 
 # Haar Cascade for face detection
@@ -49,7 +49,7 @@ def fingerprint_verification():
 
 def real_time_recognition():
     """Perform real-time face recognition with a 5-second timeout."""
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     start_time = time.time()  # Record the start time
     timeout_duration = 10  # Timeout after 10 seconds
 
@@ -129,12 +129,13 @@ def check_motion_and_recognize_face():
                     print("Access granted.")
                 else:
                     print("Access denied.")
-                    time.sleep(5)  # Add a 5-second delay before restarting the loop
             elif response == "No motion detected":
-                print("No motion detected.")
-            time.sleep(1)  # Small delay to prevent excessive polling
+                print("No motion detected.") 
+            time.sleep(1)
     except KeyboardInterrupt:
         print("Program interrupted. Exiting...")
     finally:
         arduino.close()
 
+# Start the main function
+check_motion_and_recognize_face()
