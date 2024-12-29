@@ -49,7 +49,7 @@ def fingerprint_verification():
 
 def real_time_recognition():
     """Perform real-time face recognition with a 3-second camera display."""
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     
     if not cap.isOpened():
         print("Error: Cannot access the camera.")
