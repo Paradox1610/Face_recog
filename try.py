@@ -51,7 +51,7 @@ def real_time_recognition():
     """Perform real-time face recognition with a 5-second timeout."""
     cap = cv2.VideoCapture(1)
     start_time = time.time()  # Record the start time
-    timeout_duration = 10  # Timeout after 5 seconds
+    timeout_duration = 10  # Timeout after 10 seconds
 
     while True:
         ret, frame = cap.read()
@@ -84,6 +84,13 @@ def real_time_recognition():
             cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 2)
             cv2.putText(frame, str(confidence), (x, y-40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
 
+            if label == "Intruder":
+                print("Intruder detected! Access denied.")
+                time.sleep(5)  # Wait for 5 seconds before returning to motion detection
+                cap.release()
+                cv2.destroyAllWindows()
+                return False  # Return to motion detection
+
             if confidence >= 70 and label != "Intruder":
                 print(f"Recognized {label}. Initiating fingerprint verification...")
                 cap.release()
@@ -105,6 +112,7 @@ def real_time_recognition():
     cap.release()
     cv2.destroyAllWindows()
     return False
+
 
 
 def check_motion_and_recognize_face():
