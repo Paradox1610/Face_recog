@@ -53,11 +53,6 @@ def fingerprint_verification(expected_id):
 def real_time_recognition():
     """Perform real-time face recognition with a 3-second camera display."""
     cap = cv2.VideoCapture(0)
-
-    if not cap.isOpened():
-        print("Error: Cannot access the camera.")
-        return False
-
     start_time = time.time()  # Record the start time
     timeout_duration = 10  # Timeout after 10 seconds
     camera_display_time = 3  # Keep camera open for at least 3 seconds
@@ -103,21 +98,10 @@ def real_time_recognition():
                 return False  # Return to motion detection
 
             if confidence >= 70 and label != "Intruder":
-                face_recognized = True
-                if recognition_start_time is None:
-                    recognition_start_time = time.time()
-
-                # Check if the camera has displayed the face for at least 3 seconds
-                if time.time() - recognition_start_time >= camera_display_time:
-                    print(f"Recognized {label}. Initiating fingerprint verification...")
-                    expected_fingerprint_id = face_to_fingerprint.get(label)
-                    if expected_fingerprint_id:
-                        cap.release()
-                        cv2.destroyAllWindows()
-                        return fingerprint_verification(expected_fingerprint_id)
-                    else:
-                        print("No fingerprint ID assigned for this label. Access denied.")
-                        return False
+                print(f"Recognized {label}. Initiating fingerprint verification...")
+                cap.release()
+                cv2.destroyAllWindows()
+                return fingerprint_verification()
 
         cv2.imshow('Real-Time Face Recognition', frame)
 
@@ -132,6 +116,8 @@ def real_time_recognition():
     cap.release()
     cv2.destroyAllWindows()
     return False
+
+
 
 def check_motion_and_recognize_face():
     """Main function to detect motion, recognize face, and unlock lock."""
@@ -156,5 +142,3 @@ def check_motion_and_recognize_face():
     finally:
         arduino.close()
 
-# Start the main function
-check_motion_and_recognize_face()
