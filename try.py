@@ -142,3 +142,4 @@ def check_motion_and_recognize_face():
     finally:
         arduino.close()
 
+check_motion_and_recognize_face()
