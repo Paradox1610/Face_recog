@@ -48,10 +48,19 @@ def fingerprint_verification():
             return False
 
 def real_time_recognition():
-    """Perform real-time face recognition with a 5-second timeout."""
-    cap = cv2.VideoCapture(0)
+    """Perform real-time face recognition with a 3-second camera display."""
+    cap = cv2.VideoCapture(1)
+    
+    if not cap.isOpened():
+        print("Error: Cannot access the camera.")
+        return False
+
     start_time = time.time()  # Record the start time
     timeout_duration = 10  # Timeout after 10 seconds
+    camera_display_time = 3  # Keep camera open for at least 3 seconds
+
+    face_recognized = False
+    recognition_start_time = None
 
     while True:
         ret, frame = cap.read()
@@ -81,7 +90,6 @@ def real_time_recognition():
 
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
             cv2.putText(frame, label, (x+4, y-6), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 2)
-            cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 2)
             cv2.putText(frame, str(confidence), (x, y-40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
 
             if label == "Intruder":
@@ -92,19 +100,23 @@ def real_time_recognition():
                 return False  # Return to motion detection
 
             if confidence >= 70 and label != "Intruder":
-                print(f"Recognized {label}. Initiating fingerprint verification...")
-                cap.release()
-                cv2.destroyAllWindows()
-                return fingerprint_verification()
+                face_recognized = True
+                if recognition_start_time is None:
+                    recognition_start_time = time.time()
+
+                # Check if the camera has displayed the face for at least 3 seconds
+                if time.time() - recognition_start_time >= camera_display_time:
+                    print(f"Recognized {label}. Initiating fingerprint verification...")
+                    cap.release()
+                    cv2.destroyAllWindows()
+                    return fingerprint_verification()
 
         cv2.imshow('Real-Time Face Recognition', frame)
 
         # Timeout condition
         if time.time() - start_time > timeout_duration:
             print("Face recognition timed out. Returning to motion detection.")
-            cap.release()
-            cv2.destroyAllWindows()
-            return False
+            break
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -112,6 +124,7 @@ def real_time_recognition():
     cap.release()
     cv2.destroyAllWindows()
     return False
+
 
 
 
@@ -138,3 +151,5 @@ def check_motion_and_recognize_face():
     finally:
         arduino.close()
 
+# Start the main function
+check_motion_and_recognize_face()
