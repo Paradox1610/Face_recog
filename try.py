@@ -23,6 +23,7 @@ import time
 def fingerprint_verification():
     """Ask Arduino to verify fingerprint with a timeout."""
     print("Waiting for fingerprint...")
+    time.sleep(5) 
     arduino.write(b'F')  # Command Arduino to verify fingerprint
     
     start_time = time.time()  # Record the start time
@@ -48,7 +49,7 @@ def fingerprint_verification():
 
 def real_time_recognition():
     """Perform real-time face recognition with a 5-second timeout."""
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     start_time = time.time()  # Record the start time
     timeout_duration = 10  # Timeout after 5 seconds
 
