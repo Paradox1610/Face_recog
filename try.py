@@ -1,3 +1,8 @@
+import os
+
+# Force OpenCV to use X11 instead of Wayland
+os.environ["QT_QPA_PLATFORM"] = "xcb"
+
 import cv2
 import tensorflow as tf
 from serial import Serial
