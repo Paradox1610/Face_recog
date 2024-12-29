@@ -129,13 +129,12 @@ def check_motion_and_recognize_face():
                     print("Access granted.")
                 else:
                     print("Access denied.")
+                    time.sleep(5)  # Add a 5-second delay before restarting the loop
             elif response == "No motion detected":
-                print("No motion detected.") 
-            time.sleep(1)
+                print("No motion detected.")
+            time.sleep(1)  # Small delay to prevent excessive polling
     except KeyboardInterrupt:
         print("Program interrupted. Exiting...")
     finally:
         arduino.close()
 
-# Start the main function
-check_motion_and_recognize_face()
