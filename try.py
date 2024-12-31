@@ -20,7 +20,7 @@ print("Connected to Arduino on /dev/ttyUSB0")
 # Map recognized face labels to fingerprint IDs
 face_to_fingerprint = {
     'Vaibhav': 1,  # Fingerprint ID 1 for Vaibhav
-    'Sruthi': 2    # Fingerprint ID 2 for Sruthi
+    'Sruthi': 2    # Fingerprint ID 2 for Sruthiffr5
 }
 
 def fingerprint_verification(expected_id):
