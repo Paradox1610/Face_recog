@@ -90,12 +90,16 @@ def fingerprint_verification(expected_id):
 
         elif response == f"Fingerprint {expected_id} not matched":
             print("Fingerprint not matched. Access denied.")
-           failure_photo_path = "fingerprint_failed.jpg"
+
+            # Capture and send photo on failure
+            failure_photo_path = "fingerprint_failed.jpg"
             ret, frame = cap.read()
             if ret:
                 cv2.imwrite(failure_photo_path, frame)
                 send_telegram_message("⚠️ Fingerprint verification failed. Access denied.")
                 send_telegram_photo(failure_photo_path)
+            else:
+                print("Failed to capture photo during fingerprint failure.")
             return False
 
         if time.time() - start_time > timeout_duration:
@@ -156,7 +160,7 @@ def real_time_recognition():
                 intruder_photo_path = "intruder_detected.jpg"
                 success = cv2.imwrite(intruder_photo_path, frame)  # Save the intruder's image
                 if success:
-                    send_telegram_message("?? Intruder detected! Access denied.")
+                    send_telegram_message("⚠️ Intruder detected! Access denied.")
                     send_telegram_photo(intruder_photo_path)
                 else:
                     print("Failed to save the intruder photo.")
@@ -195,7 +199,6 @@ def real_time_recognition():
     cap.release()
     cv2.destroyAllWindows()
     return False
- 
 
 def check_motion_and_recognize_face():
     """Detect motion, recognize face, and unlock the lock."""
