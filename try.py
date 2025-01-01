@@ -1,13 +1,12 @@
 import os
-
-# Force OpenCV to use X11 instead of Wayland
-os.environ["QT_QPA_PLATFORM"] = "xcb"
-
 import cv2
 import tensorflow as tf
 from serial import Serial
 import numpy as np
 import time
+
+# Force OpenCV to use X11 instead of Wayland
+os.environ["QT_QPA_PLATFORM"] = "xcb"
 
 # Load Haar Cascade and Face Model
 face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -25,8 +24,14 @@ face_to_fingerprint = {
     'Karthik': 4    # Fingerprint ID 4 for Karthik
 }
 
+def send_lcd_message(line1, line2=""):
+    """Send a message to the LCD via Arduino."""
+    message = f"L{line1[:16]}\n{line2[:16]}"  # Trim to 16 characters per line
+    arduino.write(message.encode())
+
 def fingerprint_verification(expected_id):
     """Ask Arduino to verify fingerprint with the expected ID."""
+    send_lcd_message("Fingerprint", "Verification...")
     print(f"Waiting for fingerprint ID {expected_id}...")
     time.sleep(2)  # Allow time for fingerprint placement
     arduino.write(f'F{expected_id}'.encode())  # Send fingerprint ID to Arduino
@@ -40,14 +45,17 @@ def fingerprint_verification(expected_id):
             print(f"Arduino response: {response}")
 
         if response == f"Fingerprint {expected_id} matched":
+            send_lcd_message("Fingerprint Matched", "Unlocking...")
             print("Fingerprint matched! Unlocking solenoid lock...")
             arduino.write(b'U')  # Unlock command
             return True
         elif response == f"Fingerprint {expected_id} not matched":
+            send_lcd_message("Fingerprint Not", "Matched")
             print("Fingerprint not matched. Access denied.")
             return False
 
         if time.time() - start_time > timeout_duration:
+            send_lcd_message("Fingerprint Timeout")
             print("Fingerprint verification timed out. Returning to motion detection.")
             return False
 
@@ -56,9 +64,11 @@ def real_time_recognition():
     cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
+        send_lcd_message("Camera Error")
         print("Error: Cannot access the camera.")
         return False
 
+    send_lcd_message("Face Recognition", "Starting...")
     start_time = time.time()
     timeout_duration = 10  # Timeout after 10 seconds
     camera_display_time = 3  # Keep camera open for at least 3 seconds
@@ -70,6 +80,7 @@ def real_time_recognition():
         ret, frame = cap.read()
 
         if not ret:
+            send_lcd_message("Camera Error")
             print("Failed to capture frame from webcam. Exiting...")
             break
 
@@ -100,6 +111,7 @@ def real_time_recognition():
             cv2.putText(frame, f"{confidence:.2f}%", (x, y-40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
 
             if label == "Intruder":
+                send_lcd_message("Intruder Detected")
                 print("Intruder detected! Access denied.")
                 time.sleep(5)
                 cap.release()
@@ -112,6 +124,7 @@ def real_time_recognition():
                     recognition_start_time = time.time()
 
                 if time.time() - recognition_start_time >= camera_display_time:
+                    send_lcd_message(f"Hello {label}")
                     print(f"Recognized {label}. Initiating fingerprint verification...")
                     expected_fingerprint_id = face_to_fingerprint.get(label)
                     if expected_fingerprint_id is not None:
@@ -119,6 +132,7 @@ def real_time_recognition():
                         cv2.destroyAllWindows()
                         return fingerprint_verification(expected_fingerprint_id)
                     else:
+                        send_lcd_message("No Fingerprint ID")
                         print("No fingerprint ID assigned for this label. Access denied.")
                         cap.release()
                         cv2.destroyAllWindows()
@@ -127,6 +141,7 @@ def real_time_recognition():
         cv2.imshow('Real-Time Face Recognition', frame)
 
         if time.time() - start_time > timeout_duration:
+            send_lcd_message("Recognition Timeout")
             print("Face recognition timed out. Returning to motion detection.")
             break
 
@@ -139,6 +154,7 @@ def real_time_recognition():
 
 def check_motion_and_recognize_face():
     """Detect motion, recognize face, and unlock the lock."""
+    send_lcd_message("System Ready")
     print("Starting motion detection and face recognition...")
     try:
         while True:
@@ -148,16 +164,20 @@ def check_motion_and_recognize_face():
                 print(f"Arduino response: {response}")
 
             if response == "Motion detected":
+                send_lcd_message("Motion Detected")
                 print("Motion detected! Starting face recognition...")
                 if real_time_recognition():
+                    send_lcd_message("Access Granted")
                     print("Access granted.")
                 else:
+                    send_lcd_message("Access Denied")
                     print("Access denied. Returning to motion detection.")
                     time.sleep(5)
             elif response == "No motion detected":
                 print("No motion detected.")
             time.sleep(1)
     except KeyboardInterrupt:
+        send_lcd_message("Exiting...")
         print("Program interrupted. Exiting...")
     finally:
         arduino.close()
