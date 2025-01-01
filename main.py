@@ -7,7 +7,7 @@ face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fro
 model = tf.keras.models.load_model("face_model.keras")
 
 def real_time_recognition():
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     
     while True:
         ret, frame = cap.read()
