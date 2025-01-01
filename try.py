@@ -95,18 +95,6 @@ def fingerprint_verification(expected_id):
 
         elif response == f"Fingerprint {expected_id} not matched":
             print("Fingerprint not matched. Access denied.")
-
-            # Capture and send photo on failure
-            failure_photo_path = "fingerprint_failed.jpg"
-            if cap is None or not cap.isOpened():
-                cap = cv2.VideoCapture(0)  # Reinitialize camera if needed
-            ret, frame = cap.read()
-            if ret:
-                cv2.imwrite(failure_photo_path, frame)
-                send_telegram_message("⚠️ Fingerprint verification failed. Access denied.")
-                send_telegram_photo(failure_photo_path)
-            else:
-                print("Failed to capture photo during fingerprint failure.")
             return False
 
         if time.time() - start_time > timeout_duration:
