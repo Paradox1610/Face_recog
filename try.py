@@ -28,7 +28,7 @@ face_to_fingerprint = {
 def fingerprint_verification(expected_id):
     """Ask Arduino to verify fingerprint with the expected ID."""
     print(f"Waiting for fingerprint ID {expected_id}...")
-    time.sleep(2)  # Allow time for fingerprint placement
+    time.sleep(5)  # Allow time for fingerprint placement
     arduino.write(f'F{expected_id}'.encode())  # Send fingerprint ID to Arduino
 
     start_time = time.time()
@@ -61,7 +61,7 @@ def real_time_recognition():
 
     start_time = time.time()
     timeout_duration = 10  # Timeout after 10 seconds
-    camera_display_time = 3  # Keep camera open for at least 3 seconds
+    camera_display_time = 5  # Keep camera open for at least 5 seconds
 
     recognition_start_time = None
     face_recognized = False
