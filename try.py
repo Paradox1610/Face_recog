@@ -19,8 +19,10 @@ print("Connected to Arduino on /dev/ttyUSB0")
 
 # Map recognized face labels to fingerprint IDs
 face_to_fingerprint = {
-    'Vaibhav': 1,  # Fingerprint ID 1 for Vaibhav
-    'Sruthi': 2    # Fingerprint ID 2 for Sruthiffr5
+    'Vaibhav': 1,   # Fingerprint ID 1 for Vaibhav
+    'Sruthi': 2,    # Fingerprint ID 2 for Sruthi
+    'Kamran': 3,    # Fingerprint ID 3 for Kamran
+    'Karthik': 4    # Fingerprint ID 4 for Karthik
 }
 
 def fingerprint_verification(expected_id):
@@ -29,12 +31,12 @@ def fingerprint_verification(expected_id):
     time.sleep(2)  # Allow time for fingerprint placement
     arduino.write(f'F{expected_id}'.encode())  # Send fingerprint ID to Arduino
 
-    start_time = time.time()  # Record the start time
+    start_time = time.time()
     timeout_duration = 5  # Timeout after 5 seconds
 
     while True:
         response = arduino.readline().decode().strip()
-        if response:  # Only print non-empty responses
+        if response:
             print(f"Arduino response: {response}")
 
         if response == f"Fingerprint {expected_id} matched":
@@ -45,25 +47,24 @@ def fingerprint_verification(expected_id):
             print("Fingerprint not matched. Access denied.")
             return False
 
-        # Check if timeout has elapsed
         if time.time() - start_time > timeout_duration:
             print("Fingerprint verification timed out. Returning to motion detection.")
             return False
 
 def real_time_recognition():
-    """Perform real-time face recognition with a 3-second camera display."""
+    """Perform real-time face recognition."""
     cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
         print("Error: Cannot access the camera.")
         return False
 
-    start_time = time.time()  # Record the start time
+    start_time = time.time()
     timeout_duration = 10  # Timeout after 10 seconds
     camera_display_time = 3  # Keep camera open for at least 3 seconds
 
-    face_recognized = False
     recognition_start_time = None
+    face_recognized = False
 
     while True:
         ret, frame = cap.read()
@@ -82,39 +83,41 @@ def real_time_recognition():
             model_out = model.predict(cropped_face)[0]
             confidence = model_out[np.argmax(model_out)] * 100
 
-            print(model_out, confidence)
-
+            # Map model predictions to labels
             if np.argmax(model_out) == 0:
                 label = 'Vaibhav'
             elif np.argmax(model_out) == 1:
                 label = 'Sruthi'
             elif np.argmax(model_out) == 2:
-                label = "Intruder"
+                label = 'Kamran'
+            elif np.argmax(model_out) == 3:
+                label = 'Karthik'
+            elif np.argmax(model_out) == 4:
+                label = 'Intruder'
 
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            cv2.putText(frame, label, (x+4, y-6), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 2)
-            cv2.putText(frame, str(confidence), (x, y-40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
+            cv2.putText(frame, label, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            cv2.putText(frame, f"{confidence:.2f}%", (x, y-40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
 
             if label == "Intruder":
                 print("Intruder detected! Access denied.")
-                time.sleep(5)  # Wait for 5 seconds before returning to motion detection
+                time.sleep(5)
                 cap.release()
                 cv2.destroyAllWindows()
-                return False  # Return to motion detection
+                return False
 
             if confidence >= 70 and label != "Intruder":
                 face_recognized = True
                 if recognition_start_time is None:
                     recognition_start_time = time.time()
 
-                # Check if the camera has displayed the face for at least 3 seconds
                 if time.time() - recognition_start_time >= camera_display_time:
                     print(f"Recognized {label}. Initiating fingerprint verification...")
                     expected_fingerprint_id = face_to_fingerprint.get(label)
-                    if expected_fingerprint_id is not None:  # Ensure there's a mapping
+                    if expected_fingerprint_id is not None:
                         cap.release()
                         cv2.destroyAllWindows()
-                        return fingerprint_verification(expected_fingerprint_id)  # Pass the ID here
+                        return fingerprint_verification(expected_fingerprint_id)
                     else:
                         print("No fingerprint ID assigned for this label. Access denied.")
                         cap.release()
@@ -123,7 +126,6 @@ def real_time_recognition():
 
         cv2.imshow('Real-Time Face Recognition', frame)
 
-        # Timeout condition
         if time.time() - start_time > timeout_duration:
             print("Face recognition timed out. Returning to motion detection.")
             break
@@ -135,26 +137,26 @@ def real_time_recognition():
     cv2.destroyAllWindows()
     return False
 
-
-
 def check_motion_and_recognize_face():
-    """Main function to detect motion, recognize face, and unlock lock."""
+    """Detect motion, recognize face, and unlock the lock."""
     print("Starting motion detection and face recognition...")
     try:
         while True:
             arduino.write(b'M')  # Send 'M' to Arduino to check motion
             response = arduino.readline().decode().strip()
-            print(f"Arduino response: {response}")  # Debugging print
+            if response:
+                print(f"Arduino response: {response}")
+
             if response == "Motion detected":
                 print("Motion detected! Starting face recognition...")
                 if real_time_recognition():
                     print("Access granted.")
                 else:
-                    print("Access denied.")
-                    time.sleep(5)  # Add a 5-second delay before restarting the loop
+                    print("Access denied. Returning to motion detection.")
+                    time.sleep(5)
             elif response == "No motion detected":
                 print("No motion detected.")
-            time.sleep(1)  # Small delay to prevent excessive polling
+            time.sleep(1)
     except KeyboardInterrupt:
         print("Program interrupted. Exiting...")
     finally:
