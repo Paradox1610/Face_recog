@@ -84,6 +84,7 @@ def fingerprint_verification(expected_id):
             success_photo_path = "access_granted.jpg"
             if cap is None or not cap.isOpened():
                 cap = cv2.VideoCapture(0)  # Reinitialize camera if needed
+                time.sleep(2)  # Allow time for camera warm-up
             ret, frame = cap.read()
             if ret:
                 cv2.imwrite(success_photo_path, frame)
@@ -100,6 +101,7 @@ def fingerprint_verification(expected_id):
             intruder_photo_path = "access_denied.jpg"
             if cap is None or not cap.isOpened():
                 cap = cv2.VideoCapture(0)  # Reinitialize camera if needed
+                time.sleep(2)  # Allow time for camera warm-up
             ret, frame = cap.read()
             if ret:
                 cv2.imwrite(intruder_photo_path, frame)
