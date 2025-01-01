@@ -7,7 +7,7 @@ face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fro
 model = tf.keras.models.load_model("face_model.keras")
 
 def real_time_recognition():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     
     while True:
         ret, frame = cap.read()
@@ -26,7 +26,11 @@ def real_time_recognition():
             elif np.argmax(model_out) == 1:
                 label = 'Sruthi'
             elif np.argmax(model_out) == 2:
-                label = "Intruder"
+                label = 'Kamran'
+            elif np.argmax(model_out) == 3:
+                label = 'Karthik'
+            elif np.argmax(model_out) == 4:
+                label = 'Intruder'
             
             
             
@@ -36,6 +40,14 @@ def real_time_recognition():
             cv2.putText(frame, str(model_out[np.argmax(model_out)]*100), (x, y-40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
             
         cv2.imshow('Real-Time Face Recognition', frame)
+
+        # if confidence >= 70 and label != "Unknown":
+        #         print(f"Recognized {label}. Initiating fingerprint verification...")
+        #         cap.release()
+        #         cv2.destroyAllWindows()
+        #         time.sleep(10)
+        #         return fingerprint_verification()
+
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
