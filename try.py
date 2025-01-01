@@ -95,6 +95,16 @@ def fingerprint_verification(expected_id):
 
         elif response == f"Fingerprint {expected_id} not matched":
             print("Fingerprint not matched. Access denied.")
+            intruder_photo_path = "intruder_detected.jpg"
+            success = cv2.imwrite(intruder_photo_path, frame)  # Save the intruder's image
+            if success:
+                send_telegram_message("⚠️ Fingerprint Verification Failed - Access denied.")
+                send_telegram_photo(intruder_photo_path)
+            else:
+                print("Failed to save the intruder photo.")
+            time.sleep(5)
+            cap.release()
+            cv2.destroyAllWindows()
             return False
 
         if time.time() - start_time > timeout_duration:
