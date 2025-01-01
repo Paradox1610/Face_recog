@@ -78,10 +78,26 @@ def fingerprint_verification(expected_id):
         if response == f"Fingerprint {expected_id} matched":
             print("Fingerprint matched! Unlocking solenoid lock...")
             arduino.write(b'U')  # Unlock command
+
+            # Capture and send photo on success
+            success_photo_path = "access_granted.jpg"
+            ret, frame = cap.read()
+            if ret:
+                cv2.imwrite(success_photo_path, frame)
+                send_telegram_message("✅ Access Granted: Both face and fingerprint verified. Solenoid lock unlocked.")
+                send_telegram_photo(success_photo_path)
             return True
+
         elif response == f"Fingerprint {expected_id} not matched":
             print("Fingerprint not matched. Access denied.")
-            send_telegram_message("⚠️ Fingerprint ID Failed - Intruder detected! Access denied.")
+
+            # Capture and send photo on failure
+            failure_photo_path = "fingerprint_failed.jpg"
+            ret, frame = cap.read()
+            if ret:
+                cv2.imwrite(failure_photo_path, frame)
+                send_telegram_message("⚠️ Fingerprint verification failed. Access denied.")
+                send_telegram_photo(failure_photo_path)
             return False
 
         if time.time() - start_time > timeout_duration:
@@ -90,6 +106,7 @@ def fingerprint_verification(expected_id):
 
 def real_time_recognition():
     """Perform real-time face recognition."""
+    global cap  # To use the camera object in fingerprint verification
     cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
@@ -138,10 +155,7 @@ def real_time_recognition():
 
             if label == "Intruder":
                 print("Intruder detected! Access denied.")
-                intruder_photo_path = "intruder.jpg"
-                cv2.imwrite(intruder_photo_path, frame)  # Save the intruder's image
                 send_telegram_message("⚠️ Face ID Failed - Intruder detected! Access denied.")
-                send_telegram_photo(intruder_photo_path)  # Send the intruder photo
                 time.sleep(5)
                 cap.release()
                 cv2.destroyAllWindows()
