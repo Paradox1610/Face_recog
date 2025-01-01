@@ -8,6 +8,7 @@ import tensorflow as tf
 from serial import Serial
 import numpy as np
 import time
+import requests
 
 # Load Haar Cascade and Face Model
 face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -24,6 +25,26 @@ face_to_fingerprint = {
     'Kamran': 3,    # Fingerprint ID 3 for Kamran
     'Karthik': 4    # Fingerprint ID 4 for Karthik
 }
+
+# Telegram Bot Configuration
+bot_token = "7620011385:AAHC3ip1Ha-NeuiTpsvMydRroxIlYJtblro"  # Replace with your bot token
+chat_id = "7396267168"      # Replace with your chat ID
+
+def send_telegram_message(bot_token, chat_id, message):
+    """Send a message using the Telegram bot."""
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": message
+    }
+    try:
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            print("Telegram alert sent successfully!")
+        else:
+            print(f"Failed to send Telegram alert. Response: {response.text}")
+    except Exception as e:
+        print(f"An error occurred while sending Telegram alert: {e}")
 
 def fingerprint_verification(expected_id):
     """Ask Arduino to verify fingerprint with the expected ID."""
@@ -101,6 +122,7 @@ def real_time_recognition():
 
             if label == "Intruder":
                 print("Intruder detected! Access denied.")
+                send_telegram_message(bot_token, chat_id, "⚠️ Intruder detected! Access denied.")
                 time.sleep(5)
                 cap.release()
                 cv2.destroyAllWindows()
