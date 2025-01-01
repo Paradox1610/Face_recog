@@ -63,6 +63,7 @@ def send_telegram_photo(photo_path):
 
 def fingerprint_verification(expected_id):
     """Ask Arduino to verify fingerprint with the expected ID."""
+    global cap  # Ensure access to the camera object
     print(f"Waiting for fingerprint ID {expected_id}...")
     time.sleep(5)  # Allow time for fingerprint placement
     arduino.write(f'F{expected_id}'.encode())  # Send fingerprint ID to Arduino
@@ -81,11 +82,15 @@ def fingerprint_verification(expected_id):
 
             # Capture and send photo on success
             success_photo_path = "access_granted.jpg"
+            if cap is None or not cap.isOpened():
+                cap = cv2.VideoCapture(0)  # Reinitialize camera if needed
             ret, frame = cap.read()
             if ret:
                 cv2.imwrite(success_photo_path, frame)
                 send_telegram_message("✅ Access Granted: Both face and fingerprint verified. Solenoid lock unlocked.")
                 send_telegram_photo(success_photo_path)
+            else:
+                print("Failed to capture photo during successful access.")
             return True
 
         elif response == f"Fingerprint {expected_id} not matched":
@@ -93,6 +98,8 @@ def fingerprint_verification(expected_id):
 
             # Capture and send photo on failure
             failure_photo_path = "fingerprint_failed.jpg"
+            if cap is None or not cap.isOpened():
+                cap = cv2.VideoCapture(0)  # Reinitialize camera if needed
             ret, frame = cap.read()
             if ret:
                 cv2.imwrite(failure_photo_path, frame)
@@ -160,7 +167,7 @@ def real_time_recognition():
                 intruder_photo_path = "intruder_detected.jpg"
                 success = cv2.imwrite(intruder_photo_path, frame)  # Save the intruder's image
                 if success:
-                    send_telegram_message("⚠️ Intruder detected! Access denied.")
+                    send_telegram_message("⚠️ Face ID Failed - Intruder detected! Access denied.")
                     send_telegram_photo(intruder_photo_path)
                 else:
                     print("Failed to save the intruder photo.")
