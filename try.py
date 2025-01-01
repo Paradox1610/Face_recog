@@ -20,18 +20,18 @@ print("Connected to Arduino on /dev/ttyUSB0")
 
 # Map recognized face labels to fingerprint IDs
 face_to_fingerprint = {
-    'Vaibhav': 1,   # Fingerprint ID 1 for Vaibhav
-    'Sruthi': 2,    # Fingerprint ID 2 for Sruthi
-    'Kamran': 3,    # Fingerprint ID 3 for Kamran
-    'Karthik': 4    # Fingerprint ID 4 for Karthik
+    'Vaibhav': 1,
+    'Sruthi': 2,
+    'Kamran': 3,
+    'Karthik': 4
 }
 
 # Telegram Bot Configuration
 bot_token = "7620011385:AAHC3ip1Ha-NeuiTpsvMydRroxIlYJtblro"  # Replace with your bot token
-chat_id = "7396267168"      # Replace with your chat ID
+chat_id = "7396267168"  # Replace with your chat ID
 
-def send_telegram_message(bot_token, chat_id, message):
-    """Send a message using the Telegram bot."""
+def send_telegram_message(message):
+    """Send a text message using the Telegram bot."""
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
         "chat_id": chat_id,
@@ -45,6 +45,21 @@ def send_telegram_message(bot_token, chat_id, message):
             print(f"Failed to send Telegram alert. Response: {response.text}")
     except Exception as e:
         print(f"An error occurred while sending Telegram alert: {e}")
+
+def send_telegram_photo(photo_path):
+    """Send a photo using the Telegram bot."""
+    url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+    with open(photo_path, 'rb') as photo:
+        files = {"photo": photo}
+        data = {"chat_id": chat_id}
+        try:
+            response = requests.post(url, data=data, files=files)
+            if response.status_code == 200:
+                print("Photo sent successfully!")
+            else:
+                print(f"Failed to send photo. Response: {response.text}")
+        except Exception as e:
+            print(f"An error occurred while sending photo: {e}")
 
 def fingerprint_verification(expected_id):
     """Ask Arduino to verify fingerprint with the expected ID."""
@@ -66,6 +81,7 @@ def fingerprint_verification(expected_id):
             return True
         elif response == f"Fingerprint {expected_id} not matched":
             print("Fingerprint not matched. Access denied.")
+            send_telegram_message("⚠️ Fingerprint ID Failed - Intruder detected! Access denied.")
             return False
 
         if time.time() - start_time > timeout_duration:
@@ -122,7 +138,10 @@ def real_time_recognition():
 
             if label == "Intruder":
                 print("Intruder detected! Access denied.")
-                send_telegram_message(bot_token, chat_id, "⚠️ Intruder detected! Access denied.")
+                intruder_photo_path = "intruder.jpg"
+                cv2.imwrite(intruder_photo_path, frame)  # Save the intruder's image
+                send_telegram_message("⚠️ Face ID Failed - Intruder detected! Access denied.")
+                send_telegram_photo(intruder_photo_path)  # Send the intruder photo
                 time.sleep(5)
                 cap.release()
                 cv2.destroyAllWindows()
